@@ -3,6 +3,10 @@ bin-debug/
 bin-release/
 [Oo]bj/
 [Bb]in/
+cmake-build-debug/
+.idea/
+build/
+
 
 # Other files and folders
 .settings/
