@@ -1,3 +1,14 @@
+/**
+ * @file main.cpp for occupancy grid
+ * @author Atta Oveisi (atta.oveisi@gmail.com)
+ * @brief
+ * @version 0.1
+ * @date 2020-12-17
+ *
+ * @copyright Copyright (c) 2020
+ *
+ */
+
 #include <iostream>
 #include <math.h>
 #include <vector>
@@ -106,25 +117,43 @@ void visualization()
     matplot::title("Map");
     matplot::xlim({0, (mapWidth / gridWidth)});
     matplot::ylim({0, (mapHeight / gridHeight)});
+    vector<double> x_u;
+    vector<double> y_u;
+    vector<double> x_f;
+    vector<double> y_f;
+    vector<double> x_o;
+    vector<double> y_o;
 
     // Draw every grid of the map:
     for (double x = 0; x < mapWidth / gridWidth; x++) {
         cout << "Remaining Rows= " << mapWidth / gridWidth - x << endl;
         for (double y = 0; y < mapHeight / gridHeight; y++) {
-            if (l[x][y] == 0) {
-                //Green unkown state
-                matplot::plot({ x }, { y }, "g.");
+            if (abs(l[x][y]) < 0.01) {
+                //Unkown state
+                x_u.push_back(x);
+                y_u.push_back(y);
             }
-            else if (l[x][y] > 0) {
-                //Black occupied state
-                matplot::plot({ x }, { y }, "k.");
+            else if (l[x][y] >= 0.01) {
+                //occupied state
+                x_o.push_back(x);
+                y_o.push_back(y);
             }
-            else {
-                //Red free state
-                matplot::plot({ x }, { y }, "r.");
+            else if (l[x][y] <= -0.01) {
+                //free state
+                x_f.push_back(x);
+                y_f.push_back(y);
             }
         }
     }
+
+    matplot::hold(matplot::on);
+    matplot::plot(x_u, y_u, "g.");
+
+    matplot::hold(matplot::on);
+    matplot::plot(x_o, y_o, "k.");
+
+    matplot::hold(matplot::on);
+    matplot::plot(x_f, y_f, "r.");
 
     matplot::show();
     matplot::save("./Images/Map.png");
@@ -136,21 +165,27 @@ int main()
     double measurementData[8];
     double robotX, robotY, robotTheta;
 
-    FILE* posesFile = fopen("Data/poses.txt", "r");
-    FILE* measurementFile = fopen("Data/measurement.txt", "r");
+    FILE* posesFile = fopen("/home/atta/occupancy_grid_mapping/src/Data/poses.txt", "r");
+    FILE* measurementFile = fopen("/home/atta/occupancy_grid_mapping/src/Data/measurement.txt", "r");
+    cout << "Files are read" << endl;
 
-    // Scanning the files and retrieving measurement and poses at each timestamp
+    /**
+     * Scanning the files and retrieving measurement and poses at each timestamp
+     */
+    int counter{0};
     while (fscanf(posesFile, "%lf %lf %lf %lf", &timeStamp, &robotX, &robotY, &robotTheta) != EOF) {
         fscanf(measurementFile, "%lf", &timeStamp);
         for (int i = 0; i < 8; i++) {
             fscanf(measurementFile, "%lf", &measurementData[i]);
         }
+
         occupancyGridMapping(robotX, robotY, (robotTheta / 10) * (M_PI / 180), measurementData);
+        counter += 1;
     }
 
     // Visualize the map at the final step
     cout << "Wait for the image to generate" << endl;
-    //visualization();
+    visualization();
     cout << "Done!" << endl;
 
     return 0;
